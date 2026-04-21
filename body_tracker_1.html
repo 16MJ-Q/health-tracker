@@ -1,0 +1,2234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corpus · Body Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f3f1ec;
+  --bg-card: #faf8f3;
+  --bg-soft: #ece8df;
+  --surface: #ffffff;
+  --border: #d9d3c3;
+  --border-soft: #e5e0d2;
+  --ink: #2a2e28;
+  --ink-soft: #555a50;
+  --ink-muted: #8a8d82;
+  --ink-faint: #b5b2a6;
+  --sage: #5f7a5b;
+  --sage-deep: #3e5240;
+  --sage-soft: #a8bfa2;
+  --sage-pale: #dfe7da;
+  --brass: #8a7348;
+  --terra: #b06954;
+  --radius: 10px;
+  --radius-sm: 5px;
+  --space: 16px;
+  --shadow-sm: 0 1px 2px rgba(42, 46, 40, 0.04);
+  --shadow: 0 2px 12px rgba(42, 46, 40, 0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.serif {
+  font-family: 'DM Serif Display', serif;
+  font-weight: 400;
+}
+
+.container {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 22px 60px;
+}
+
+/* ========== Header ========== */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.header-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 34px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.header-subtitle {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+.date-display {
+  text-align: right;
+}
+
+.date-main {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--sage-deep);
+  line-height: 1;
+}
+
+.date-meta {
+  font-size: 10px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin-top: 6px;
+}
+
+/* ========== Tabs ========== */
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 10px;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover { color: var(--ink-soft); }
+
+.tab.active {
+  color: var(--sage-deep);
+  border-bottom-color: var(--sage);
+}
+
+.view { display: none; animation: fadeIn 0.3s ease; }
+.view.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== Section ========== */
+.section { margin-bottom: 36px; }
+
+.section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--ink-muted);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.section-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-soft);
+}
+
+.section-label .count {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  color: var(--sage);
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ========== Progress ========== */
+.progress-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progress-dots { display: flex; gap: 10px; }
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dot.filled {
+  background: var(--sage);
+  border-color: var(--sage);
+  transform: scale(1.1);
+}
+
+.progress-count {
+  font-size: 12px;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+}
+
+.progress-count .num {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  color: var(--sage-deep);
+  font-size: 20px;
+  margin-right: 2px;
+}
+
+/* ========== Checklist ========== */
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.check-item:hover {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.check-box {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.check-item.checked .check-box {
+  background: var(--sage);
+  border-color: var(--sage);
+}
+
+.check-box svg {
+  width: 12px;
+  height: 12px;
+  stroke: var(--bg-card);
+  stroke-width: 3;
+  fill: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.check-item.checked .check-box svg { opacity: 1; }
+
+.check-content { flex: 1; }
+
+.check-label {
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.check-detail {
+  font-size: 11px;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+
+.check-item.checked .check-label { color: var(--ink-muted); }
+
+.check-guide {
+  margin-left: 12px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 10px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.check-guide:hover {
+  color: var(--sage-deep);
+  border-color: var(--sage);
+  background: var(--sage-pale);
+}
+
+/* ========== Scale ========== */
+.scale-container {
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.scale-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+}
+
+.scale-value {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 38px;
+  color: var(--sage-deep);
+  line-height: 1;
+}
+
+.scale-value .max {
+  color: var(--ink-faint);
+  font-size: 20px;
+  margin-left: 2px;
+  font-style: italic;
+}
+
+.scale-label-text {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-muted);
+}
+
+.scale-track {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.scale-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--bg-soft);
+  border-radius: 2px;
+  position: relative;
+}
+
+.scale-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--sage-soft), var(--sage));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.scale-input {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.scale-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--surface);
+  border-radius: 50%;
+  border: 2px solid var(--sage);
+  cursor: grab;
+  box-shadow: var(--shadow);
+}
+
+.scale-input::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--surface);
+  border-radius: 50%;
+  border: 2px solid var(--sage);
+  cursor: grab;
+  box-shadow: var(--shadow);
+}
+
+/* ========== Weight ========== */
+.weight-input-row {
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.weight-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 0;
+  color: var(--sage-deep);
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 28px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.weight-input:focus { border-bottom-color: var(--sage); }
+
+.weight-input::placeholder { color: var(--ink-faint); }
+
+.weight-unit {
+  color: var(--ink-muted);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* ========== Recipe Cards ========== */
+.recipe-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recipe-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  position: relative;
+}
+
+.recipe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.recipe-time {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 20px;
+  color: var(--sage-deep);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.recipe-title {
+  font-size: 13px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  text-align: right;
+}
+
+.recipe-items {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 8px;
+}
+
+.recipe-items li {
+  font-size: 14px;
+  color: var(--ink-soft);
+  position: relative;
+  padding-left: 10px;
+}
+
+.recipe-items li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  color: var(--sage);
+  font-weight: bold;
+}
+
+.recipe-note {
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-style: italic;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-soft);
+  line-height: 1.5;
+}
+
+.recipe-note strong {
+  font-style: normal;
+  color: var(--brass);
+  font-weight: 600;
+}
+
+/* ========== Training Guide ========== */
+.guide-intro {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 18px;
+  line-height: 1.6;
+  font-style: italic;
+  padding: 14px 18px;
+  background: var(--sage-pale);
+  border-left: 2px solid var(--sage);
+  border-radius: var(--radius-sm);
+}
+
+.exercise-group {
+  margin-bottom: 26px;
+}
+
+.exercise-group-title {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 20px;
+  color: var(--sage-deep);
+  margin-bottom: 4px;
+}
+
+.exercise-group-meta {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 14px;
+}
+
+.exercise-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 8px;
+}
+
+.exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.exercise-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.exercise-dose {
+  font-size: 11px;
+  color: var(--brass);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.exercise-steps {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  counter-reset: step;
+}
+
+.exercise-steps li {
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding-left: 22px;
+  position: relative;
+  margin-bottom: 4px;
+  line-height: 1.5;
+  counter-increment: step;
+}
+
+.exercise-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  color: var(--sage);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+}
+
+.exercise-warning {
+  font-size: 12px;
+  color: var(--terra);
+  font-style: italic;
+  margin-top: 6px;
+  padding-left: 4px;
+  border-left: 2px solid var(--terra);
+  padding-left: 10px;
+}
+
+.video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  transition: all 0.2s;
+}
+
+.video-link:hover {
+  background: var(--sage-pale);
+  border-color: var(--sage);
+  color: var(--sage-deep);
+}
+
+.video-link svg {
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+}
+
+/* ========== Week View ========== */
+.week-grid {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  gap: 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  padding: 14px 12px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+
+.week-header {
+  font-size: 9px;
+  color: var(--ink-muted);
+  text-align: center;
+  padding: 6px 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.week-cell-label {
+  font-size: 10px;
+  color: var(--ink-soft);
+  padding: 8px 4px;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.week-cell {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--ink-faint);
+  transition: all 0.2s;
+}
+
+.week-cell.done {
+  background: var(--sage);
+  color: var(--bg-card);
+}
+
+.week-cell.today {
+  box-shadow: 0 0 0 1.5px var(--brass);
+}
+
+.chart-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+canvas {
+  width: 100%;
+  display: block;
+  max-width: 100%;
+}
+
+/* ========== Stats ========== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 18px 12px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 30px;
+  color: var(--sage-deep);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 9px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+}
+
+/* ========== Data Actions ========== */
+.data-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.btn {
+  flex: 1;
+  padding: 11px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--ink-soft);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.btn-primary {
+  color: var(--sage-deep);
+  border-color: var(--sage);
+  background: var(--sage-pale);
+}
+
+.btn-primary:hover {
+  background: var(--sage);
+  color: var(--bg-card);
+  border-color: var(--sage);
+}
+
+/* ========== Toast ========== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--sage-deep);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(42, 46, 40, 0.2);
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ========== Month Nav ========== */
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 12px;
+  transition: color 0.2s;
+  font-family: 'DM Serif Display', serif;
+}
+
+.nav-btn:hover { color: var(--sage-deep); }
+
+.month-label {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+/* ========== Modal ========== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(42, 46, 40, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--bg);
+  border-radius: var(--radius);
+  max-width: 600px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(42, 46, 40, 0.3);
+  padding: 28px;
+}
+
+.modal-close {
+  float: right;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-family: 'DM Serif Display', serif;
+}
+
+.modal-close:hover { color: var(--ink); }
+
+.modal-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.modal-subtitle {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin-bottom: 18px;
+}
+
+/* ========== Decorative ========== */
+.decorative {
+  text-align: center;
+  color: var(--ink-faint);
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 14px;
+  margin: 40px 0 14px;
+  letter-spacing: 0.3em;
+}
+
+@media (max-width: 480px) {
+  .container { padding: 20px 14px 40px; }
+  .header-title { font-size: 26px; }
+  .stats-grid { gap: 6px; }
+  .stat-value { font-size: 24px; }
+  .stat-card { padding: 14px 6px; }
+  .week-grid { grid-template-columns: 54px repeat(7, 1fr); gap: 3px; padding: 10px 8px; }
+  .tab { padding: 10px 4px; font-size: 10px; letter-spacing: 0.1em; }
+  .recipe-title { font-size: 11px; }
+  .recipe-time { font-size: 18px; }
+  .modal { padding: 20px; }
+  .modal-title { font-size: 22px; }
+  .check-guide { padding: 3px 8px; font-size: 9px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <div class="header-title serif">Corpus</div>
+      <div class="header-subtitle">body · recipe · movement</div>
+    </div>
+    <div class="date-display">
+      <div class="date-main serif" id="date-main">—</div>
+      <div class="date-meta" id="date-meta">—</div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-view="today">Today</button>
+    <button class="tab" data-view="guide">Guide</button>
+    <button class="tab" data-view="week">Week</button>
+    <button class="tab" data-view="month">Month</button>
+  </div>
+
+  <!-- ========== TODAY VIEW ========== -->
+  <div class="view active" id="view-today">
+
+    <!-- Daily Practices -->
+    <div class="section">
+      <div class="section-label">Daily Practices</div>
+
+      <div class="progress-row">
+        <div class="progress-dots" id="progress-dots">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+        <div class="progress-count"><span class="num" id="progress-num">0</span>/5</div>
+      </div>
+
+      <div class="check-list" id="check-list"></div>
+    </div>
+
+    <!-- Body Sense -->
+    <div class="section">
+      <div class="section-label">Body Sense</div>
+      <div class="scale-container">
+        <div class="scale-header">
+          <div class="scale-value"><span id="scale-num">—</span><span class="max">/10</span></div>
+          <div class="scale-label-text">Overall Feeling</div>
+        </div>
+        <div class="scale-track">
+          <div class="scale-bar">
+            <div class="scale-bar-fill" id="scale-fill" style="width: 0%"></div>
+          </div>
+          <input type="range" class="scale-input" id="scale-input" min="0" max="10" step="1" value="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Weight -->
+    <div class="section">
+      <div class="section-label">Weight</div>
+      <div class="weight-input-row">
+        <input type="number" class="weight-input" id="weight-input" step="0.1" placeholder="—" inputmode="decimal">
+        <div class="weight-unit">kg</div>
+      </div>
+    </div>
+
+    <!-- Recipe -->
+    <div class="section">
+      <div class="section-label">Daily Nourishment</div>
+
+      <div class="recipe-grid">
+        <div class="recipe-card">
+          <div class="recipe-header">
+            <div class="recipe-time serif">11:00</div>
+            <div class="recipe-title">First Meal</div>
+          </div>
+          <ul class="recipe-items">
+            <li>Latte</li>
+            <li>Bagel</li>
+            <li>2 boiled eggs</li>
+            <li>Cherry tomatoes / avocado</li>
+          </ul>
+          <div class="recipe-note">Eat the eggs <strong>before</strong> the bagel &amp; latte — let protein cushion the caffeine.</div>
+        </div>
+
+        <div class="recipe-card">
+          <div class="recipe-header">
+            <div class="recipe-time serif">14:00</div>
+            <div class="recipe-title">Afternoon</div>
+          </div>
+          <ul class="recipe-items">
+            <li>Greek yogurt ~80g</li>
+            <li>A handful of blueberries / banana</li>
+            <li>Optional: 10 almonds</li>
+          </ul>
+          <div class="recipe-note">Replaces the green juice. Cold &amp; dairy friendly — goes with your preferences.</div>
+        </div>
+
+        <div class="recipe-card">
+          <div class="recipe-header">
+            <div class="recipe-time serif">16:30</div>
+            <div class="recipe-title">Overnight Oats</div>
+          </div>
+          <ul class="recipe-items">
+            <li>Oats 30g</li>
+            <li>Chia seeds 5g</li>
+            <li>Milk 100ml + Almond milk 100ml</li>
+            <li>Greek yogurt 80g</li>
+            <li>Frozen fruit 80–120g</li>
+            <li><strong>+ 2 boiled eggs</strong> or smoked salmon</li>
+          </ul>
+          <div class="recipe-note"><strong>Added protein</strong> brings the meal to ~28g — essential for recovery.</div>
+        </div>
+
+        <div class="recipe-card">
+          <div class="recipe-header">
+            <div class="recipe-time serif">Evening</div>
+            <div class="recipe-title">Extra</div>
+          </div>
+          <ul class="recipe-items">
+            <li>Whey protein (1 scoop)</li>
+            <li>If hungry: warm milk / soy milk</li>
+          </ul>
+          <div class="recipe-note">Weekends: no rules. The body recovers through rest too.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Behavior Reminders -->
+    <div class="section">
+      <div class="section-label">Small Rituals</div>
+      <div class="recipe-card">
+        <ul class="recipe-items" style="flex-direction: column; gap: 8px;">
+          <li>3 slow breaths before each meal</li>
+          <li>Chew 20× per bite — let the gut catch up</li>
+          <li>At least one meal · no screen</li>
+          <li>10-min standing or slow walk after eating</li>
+          <li>Coffee <strong>after</strong> food, not on empty stomach</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== GUIDE VIEW ========== -->
+  <div class="view" id="view-guide">
+
+    <div class="guide-intro">
+      Every movement here addresses forward head posture, anterior pelvic tilt, or weak core — the three patterns your body currently carries. Quality over quantity.
+    </div>
+
+    <!-- Morning Posture Reset -->
+    <div class="exercise-group">
+      <div class="exercise-group-title">Morning Posture Reset</div>
+      <div class="exercise-group-meta">5 minutes · every day</div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Wall Stand</div>
+          <div class="exercise-dose">2 min</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Stand with back of head, shoulder blades, buttocks, and heels against the wall</li>
+          <li>Keep chin level — do not tilt head up or down</li>
+          <li>Gap between lower back and wall: should fit a flat palm, not a fist</li>
+          <li>Breathe slowly; feel the new baseline</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Cat–Cow</div>
+          <div class="exercise-dose">8 reps · slow</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>On hands and knees, wrists under shoulders, knees under hips</li>
+          <li>Inhale: arch back gently, lift chest and tailbone (cow)</li>
+          <li>Exhale: round back up, tuck chin and pelvis (cat)</li>
+          <li>Move with breath, not momentum</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Kneeling Hip Flexor Stretch</div>
+          <div class="exercise-dose">30s each side</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Kneel on one knee (cushion under it), other foot flat in front, 90° angle</li>
+          <li>Squeeze glutes of the back-leg side — tuck tailbone under</li>
+          <li>Shift hips gently forward, not by leaning — by glute contraction</li>
+          <li>Feel stretch in the front of the hip of the kneeling leg</li>
+        </ol>
+        <div class="exercise-warning">Do not arch lower back. The stretch comes from glute squeeze + forward hip, not spine bending.</div>
+        <a class="video-link" href="https://www.youtube.com/watch?v=0HjQPegdQwQ" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          True Hip Flexor Stretch — Mike Reinold
+        </a>
+      </div>
+    </div>
+
+    <!-- Training A -->
+    <div class="exercise-group">
+      <div class="exercise-group-title">Training A · Lower + Core</div>
+      <div class="exercise-group-meta">20 min · Mon / Wed (alternate with B)</div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Glute Bridge</div>
+          <div class="exercise-dose">3 × 15</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Lie on back, knees bent, feet flat, hip-width apart</li>
+          <li>Press heels into floor, squeeze glutes, lift hips until knees–hips–shoulders form a line</li>
+          <li>Hold 2 seconds at top, lower slowly</li>
+          <li>Key: the lift comes from glutes, not lower back</li>
+        </ol>
+        <a class="video-link" href="https://www.youtube.com/watch?v=tkH2-_jMBpE" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          Glute Bridge — Form Tutorial
+        </a>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Dead Bug</div>
+          <div class="exercise-dose">3 × 10/side</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Lie on back, arms reaching up, knees bent 90°, shins parallel to floor</li>
+          <li>Exhale: slowly lower opposite arm and leg toward the floor</li>
+          <li>Keep lower back pressed to the floor the entire time</li>
+          <li>Return to start, switch sides</li>
+        </ol>
+        <div class="exercise-warning">If your back arches off the floor, reduce the range. Control &gt; range.</div>
+        <a class="video-link" href="https://www.youtube.com/watch?v=bxn9FBrt4-A" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          Dead Bug — NASM Official
+        </a>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Bulgarian Split Squat</div>
+          <div class="exercise-dose">3 × 10/side</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Rear foot elevated on a chair or sofa behind you</li>
+          <li>Front foot far enough forward that knee stays over ankle when bending</li>
+          <li>Lower straight down, front thigh parallel to floor</li>
+          <li>Push through front heel to rise</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Side Plank</div>
+          <div class="exercise-dose">2 × 30s/side</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Lie on side, forearm on floor, elbow under shoulder</li>
+          <li>Lift hips until body forms a straight line from head to feet</li>
+          <li>Gentler on neck than front plank — good for straight-neck issues</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Training B -->
+    <div class="exercise-group">
+      <div class="exercise-group-title">Training B · Upper + Posture</div>
+      <div class="exercise-group-meta">20 min · alternates with A</div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Doorframe Chest Stretch</div>
+          <div class="exercise-dose">2 × 30s</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Stand in doorway, place forearms on the frame at shoulder height</li>
+          <li>Step one foot through, let chest fall forward gently</li>
+          <li>Feel the stretch across chest and front shoulders</li>
+          <li>Crucial for fixing rounded shoulders + forward head</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Knee Push-up</div>
+          <div class="exercise-dose">3 × 8–10</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Knees on mat, hands slightly wider than shoulders</li>
+          <li>Body forms straight line from knees to head — no sagging hips</li>
+          <li>Lower chest to almost touch the floor, push back up</li>
+          <li>Elbows angle ~45° from body, not flared wide</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Band Row</div>
+          <div class="exercise-dose">3 × 12</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Anchor band at chest height (door, railing)</li>
+          <li>Stand tall, pull handles toward ribs, elbows back and down</li>
+          <li>Squeeze shoulder blades together at the end</li>
+          <li>This is the direct antidote to your hunched posture</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Bird Dog</div>
+          <div class="exercise-dose">3 × 10/side</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Hands and knees, neutral spine</li>
+          <li>Extend opposite arm and leg simultaneously — slow and stable</li>
+          <li>Hold 2 seconds, return without rushing</li>
+          <li>Hips stay level — no rotation</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Chin Tuck</div>
+          <div class="exercise-dose">3 × 10</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Stand or sit tall — imagine a string pulling crown upward</li>
+          <li>Slide chin <strong>straight back</strong>, not down (not a nod)</li>
+          <li>A small double chin appearing = correct form</li>
+          <li>Hold 3 seconds, release</li>
+        </ol>
+        <div class="exercise-warning">If it becomes "looking down," you're doing it wrong. The motion is horizontal, like pulling your head back on a track.</div>
+        <a class="video-link" href="https://www.youtube.com/watch?v=gIBoxQ6AlS0" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          Chin Tuck — Dr. Oliver
+        </a>
+      </div>
+    </div>
+
+    <!-- Training C -->
+    <div class="exercise-group">
+      <div class="exercise-group-title">Training C · Full Body</div>
+      <div class="exercise-group-meta">20 min · once weekly</div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Wall Angel</div>
+          <div class="exercise-dose">3 × 10</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Back against wall: head, upper back, buttocks touching</li>
+          <li>Arms in "W" shape against wall, elbows bent 90°</li>
+          <li>Slide arms up to "Y" keeping contact with wall throughout</li>
+          <li>Most people cannot fully touch at first — that's the point</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Bodyweight Squat</div>
+          <div class="exercise-dose">3 × 15</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Feet shoulder-width, toes slightly out</li>
+          <li>Sit back and down — knees track over middle toes</li>
+          <li>Thighs toward parallel, chest stays lifted</li>
+          <li>Drive through heels to stand</li>
+        </ol>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Dumbbell Deadlift (Light)</div>
+          <div class="exercise-dose">3 × 12</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Start with 3kg dumbbells in each hand</li>
+          <li>Hinge at hips — push butt back, chest forward, back flat</li>
+          <li>Lower until you feel hamstring stretch (no need to touch floor)</li>
+          <li>Squeeze glutes to stand</li>
+        </ol>
+        <div class="exercise-warning">Keep neck aligned with spine — do not look up.</div>
+      </div>
+
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <div class="exercise-name">Single-leg Glute Bridge</div>
+          <div class="exercise-dose">2 × 10/side</div>
+        </div>
+        <ol class="exercise-steps">
+          <li>Set up like regular bridge, extend one leg straight</li>
+          <li>Lift hips using the planted leg only</li>
+          <li>Hips stay level — no dropping on one side</li>
+          <li>Advanced version — do when regular bridge feels easy</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Swim notes -->
+    <div class="exercise-group">
+      <div class="exercise-group-title">Swimming Strategy</div>
+      <div class="exercise-group-meta">45 min · twice weekly</div>
+
+      <div class="exercise-card">
+        <ol class="exercise-steps">
+          <li>Warm-up: slow breaststroke 200m</li>
+          <li>Main: backstroke 100m × 4 (the posture-correcting stroke)</li>
+          <li>Main: breaststroke 200m × 2</li>
+          <li>Cool-down: slow breaststroke 100m</li>
+        </ol>
+        <div class="exercise-warning">Avoid freestyle — the side-breathing aggravates straight-neck. Backstroke opens the chest, reverses forward head posture.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== WEEK VIEW ========== -->
+  <div class="view" id="view-week">
+
+    <div class="section">
+      <div class="section-label">This Week</div>
+      <div class="week-grid" id="week-grid"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Body Sense · 7 Days</div>
+      <div class="chart-container">
+        <canvas id="week-sense-chart" height="140"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Weight · 7-Day Average</div>
+      <div class="chart-container">
+        <canvas id="week-weight-chart" height="140"></canvas>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="week-complete-rate">—</div>
+        <div class="stat-label">Completion</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="week-avg-sense">—</div>
+        <div class="stat-label">Avg Sense</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="week-weight-trend">—</div>
+        <div class="stat-label">Weight Δ</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== MONTH VIEW ========== -->
+  <div class="view" id="view-month">
+
+    <div class="month-nav">
+      <button class="nav-btn" id="month-prev">‹</button>
+      <div class="month-label serif" id="month-label">—</div>
+      <button class="nav-btn" id="month-next">›</button>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Practice Heatmap</div>
+      <div class="chart-container">
+        <canvas id="month-heatmap" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Body Sense Trend</div>
+      <div class="chart-container">
+        <canvas id="month-sense-chart" height="160"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Weight · 7-Day Moving Average</div>
+      <div class="chart-container">
+        <canvas id="month-weight-chart" height="160"></canvas>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="month-complete-rate">—</div>
+        <div class="stat-label">Completion</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="month-avg-sense">—</div>
+        <div class="stat-label">Avg Sense</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="month-weight-change">—</div>
+        <div class="stat-label">Weight Δ</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="decorative">· · ·</div>
+
+  <div class="data-actions">
+    <button class="btn" id="btn-export">Export</button>
+    <button class="btn" id="btn-import">Import</button>
+    <button class="btn btn-primary" id="btn-backup">Backup</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Saved</div>
+
+<input type="file" id="file-input" accept="application/json" style="display:none">
+
+<script>
+// ============ CONFIG ============
+const HABITS = [
+  { id: 'workout', label: 'Training', detail: 'home · swim · archery' },
+  { id: 'walk', label: 'Walk', detail: 'lunch stroll' },
+  { id: 'posture', label: 'Posture Reset', detail: 'morning 5 min' },
+  { id: 'chintuck', label: 'Chin Tuck', detail: 'anytime · 10 reps' },
+  { id: 'sleep', label: 'Sleep before 1am', detail: 'circadian' }
+];
+
+const STORAGE_KEY = 'body_tracker_v2';
+
+// ============ STATE ============
+let state = loadState();
+let monthCursor = new Date();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { days: {} };
+  } catch (e) {
+    return { days: {} };
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    toast('Save failed');
+  }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+// ============ DATE UTILS ============
+function ymd(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function today() { return ymd(new Date()); }
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function getDay(dateStr) {
+  if (!state.days[dateStr]) {
+    state.days[dateStr] = { habits: {}, sense: null, weight: null };
+  }
+  return state.days[dateStr];
+}
+
+// ============ HEADER ============
+function renderHeader() {
+  const now = new Date();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('date-main').textContent =
+    `${months[now.getMonth()].substring(0,3)} ${now.getDate()}`;
+  document.getElementById('date-meta').textContent =
+    `${days[now.getDay()]} · ${now.getFullYear()}`;
+}
+
+// ============ TODAY ============
+function renderChecklist() {
+  const list = document.getElementById('check-list');
+  const day = getDay(today());
+  list.innerHTML = '';
+
+  HABITS.forEach(h => {
+    const checked = !!day.habits[h.id];
+    const item = document.createElement('div');
+    item.className = 'check-item' + (checked ? ' checked' : '');
+    item.innerHTML = `
+      <div class="check-box">
+        <svg viewBox="0 0 24 24"><polyline points="5 13 10 18 20 7"/></svg>
+      </div>
+      <div class="check-content">
+        <div class="check-label">${h.label}</div>
+        <div class="check-detail">${h.detail}</div>
+      </div>
+    `;
+    item.addEventListener('click', () => {
+      day.habits[h.id] = !day.habits[h.id];
+      saveState();
+      renderChecklist();
+      renderProgress();
+    });
+    list.appendChild(item);
+  });
+}
+
+function renderProgress() {
+  const day = getDay(today());
+  const count = HABITS.reduce((n, h) => n + (day.habits[h.id] ? 1 : 0), 0);
+  document.getElementById('progress-num').textContent = count;
+  const dots = document.querySelectorAll('#progress-dots .dot');
+  dots.forEach((d, i) => {
+    d.classList.toggle('filled', i < count);
+  });
+}
+
+function renderSense() {
+  const day = getDay(today());
+  const input = document.getElementById('scale-input');
+  const fill = document.getElementById('scale-fill');
+  const num = document.getElementById('scale-num');
+  const val = day.sense ?? 0;
+  input.value = val;
+  fill.style.width = (val * 10) + '%';
+  num.textContent = day.sense == null ? '—' : val;
+}
+
+function renderWeight() {
+  const day = getDay(today());
+  document.getElementById('weight-input').value = day.weight ?? '';
+}
+
+// ============ WEEK ============
+function renderWeek() {
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+
+  const dayNames = ['S','M','T','W','T','F','S'];
+  const corner = document.createElement('div');
+  corner.className = 'week-header';
+  corner.textContent = '';
+  grid.appendChild(corner);
+
+  const todayDate = new Date();
+  const weekStart = addDays(todayDate, -todayDate.getDay());
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) weekDates.push(addDays(weekStart, i));
+
+  weekDates.forEach((d, i) => {
+    const h = document.createElement('div');
+    h.className = 'week-header';
+    h.textContent = dayNames[i];
+    grid.appendChild(h);
+  });
+
+  HABITS.forEach(habit => {
+    const label = document.createElement('div');
+    label.className = 'week-cell-label';
+    label.textContent = habit.label.substring(0, 7);
+    grid.appendChild(label);
+
+    weekDates.forEach(d => {
+      const cell = document.createElement('div');
+      cell.className = 'week-cell';
+      const ds = ymd(d);
+      const dayData = state.days[ds];
+      const done = dayData && dayData.habits && dayData.habits[habit.id];
+      if (done) cell.classList.add('done');
+      if (ds === today()) cell.classList.add('today');
+      cell.textContent = d.getDate();
+      grid.appendChild(cell);
+    });
+  });
+
+  drawWeekSenseChart(weekDates);
+  drawWeekWeightChart(weekDates);
+
+  let totalChecks = 0, totalSlots = 0, senseSum = 0, senseCount = 0;
+  let firstWeight = null, lastWeight = null;
+  weekDates.forEach(d => {
+    const ds = ymd(d);
+    const data = state.days[ds];
+    if (data) {
+      HABITS.forEach(h => { if (data.habits && data.habits[h.id]) totalChecks++; });
+      if (data.sense != null) { senseSum += data.sense; senseCount++; }
+      if (data.weight != null) {
+        if (firstWeight === null) firstWeight = data.weight;
+        lastWeight = data.weight;
+      }
+    }
+    totalSlots += HABITS.length;
+  });
+
+  document.getElementById('week-complete-rate').textContent =
+    totalSlots > 0 ? Math.round(totalChecks / totalSlots * 100) + '%' : '—';
+  document.getElementById('week-avg-sense').textContent =
+    senseCount > 0 ? (senseSum / senseCount).toFixed(1) : '—';
+  const trend = (firstWeight != null && lastWeight != null)
+    ? (lastWeight - firstWeight).toFixed(1) : '—';
+  document.getElementById('week-weight-trend').textContent =
+    trend === '—' ? '—' : (trend >= 0 ? '+' : '') + trend;
+}
+
+// ============ CHART HELPERS ============
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w: rect.width, h: rect.height };
+}
+
+const CHART_COLORS = {
+  grid: '#e5e0d2',
+  label: '#8a8d82',
+  line: '#5f7a5b',
+  dot: '#5f7a5b',
+  trend: '#8a7348',
+  dotBorder: '#faf8f3'
+};
+
+function drawWeekSenseChart(weekDates) {
+  const canvas = document.getElementById('week-sense-chart');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = { l: 22, r: 15, t: 15, b: 22 };
+  const chartW = w - pad.l - pad.r;
+  const chartH = h - pad.t - pad.b;
+
+  ctx.strokeStyle = CHART_COLORS.grid;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + (chartH / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = CHART_COLORS.label;
+  ctx.font = '9px "DM Sans"';
+  ctx.textAlign = 'right';
+  [0, 5, 10].forEach(v => {
+    const y = pad.t + chartH - (v / 10) * chartH;
+    ctx.fillText(v, pad.l - 4, y + 3);
+  });
+
+  const dayInit = ['S','M','T','W','T','F','S'];
+  ctx.textAlign = 'center';
+  weekDates.forEach((d, i) => {
+    const x = pad.l + (chartW / 6) * i;
+    ctx.fillText(dayInit[d.getDay()], x, h - 6);
+  });
+
+  const points = weekDates.map((d, i) => {
+    const ds = ymd(d);
+    const data = state.days[ds];
+    return {
+      x: pad.l + (chartW / 6) * i,
+      y: data && data.sense != null ? pad.t + chartH - (data.sense / 10) * chartH : null,
+      val: data ? data.sense : null
+    };
+  });
+
+  const valid = points.filter(p => p.val != null);
+  if (valid.length >= 2) {
+    const n = valid.length;
+    const sumX = valid.reduce((s, p) => s + p.x, 0);
+    const sumY = valid.reduce((s, p) => s + p.y, 0);
+    const sumXY = valid.reduce((s, p) => s + p.x * p.y, 0);
+    const sumXX = valid.reduce((s, p) => s + p.x * p.x, 0);
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+    ctx.strokeStyle = CHART_COLORS.trend;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, slope * pad.l + intercept);
+    ctx.lineTo(w - pad.r, slope * (w - pad.r) + intercept);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  points.forEach(p => {
+    if (p.val == null) return;
+    ctx.fillStyle = CHART_COLORS.dot;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = CHART_COLORS.dotBorder;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+}
+
+function movingAverage(data, window) {
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    let sum = 0, count = 0;
+    for (let j = Math.max(0, i - window + 1); j <= i; j++) {
+      if (data[j] != null) { sum += data[j]; count++; }
+    }
+    result.push(count > 0 ? sum / count : null);
+  }
+  return result;
+}
+
+function drawWeekWeightChart(weekDates) {
+  const canvas = document.getElementById('week-weight-chart');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const past14 = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = addDays(new Date(), -i);
+    const data = state.days[ymd(d)];
+    past14.push(data ? data.weight : null);
+  }
+  const ma = movingAverage(past14, 7);
+  const maLast7 = ma.slice(-7);
+
+  const validMA = maLast7.filter(v => v != null);
+  if (validMA.length === 0) {
+    ctx.fillStyle = CHART_COLORS.label;
+    ctx.font = 'italic 14px "DM Serif Display"';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data yet', w / 2, h / 2);
+    return;
+  }
+
+  const min = Math.min(...validMA) - 0.5;
+  const max = Math.max(...validMA) + 0.5;
+  const range = max - min || 1;
+
+  const pad = { l: 34, r: 15, t: 15, b: 22 };
+  const chartW = w - pad.l - pad.r;
+  const chartH = h - pad.t - pad.b;
+
+  ctx.strokeStyle = CHART_COLORS.grid;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.t + (chartH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = CHART_COLORS.label;
+  ctx.font = '9px "DM Sans"';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.t + (chartH / 3) * i;
+    const v = max - (range / 3) * i;
+    ctx.fillText(v.toFixed(1), pad.l - 4, y + 3);
+  }
+
+  const dayInit = ['S','M','T','W','T','F','S'];
+  ctx.textAlign = 'center';
+  weekDates.forEach((d, i) => {
+    const x = pad.l + (chartW / 6) * i;
+    ctx.fillText(dayInit[d.getDay()], x, h - 6);
+  });
+
+  ctx.strokeStyle = CHART_COLORS.line;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let first = true;
+  maLast7.forEach((v, i) => {
+    if (v == null) return;
+    const x = pad.l + (chartW / 6) * i;
+    const y = pad.t + chartH - ((v - min) / range) * chartH;
+    if (first) { ctx.moveTo(x, y); first = false; }
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  maLast7.forEach((v, i) => {
+    if (v == null) return;
+    const x = pad.l + (chartW / 6) * i;
+    const y = pad.t + chartH - ((v - min) / range) * chartH;
+    ctx.fillStyle = CHART_COLORS.trend;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// ============ MONTH ============
+function renderMonth() {
+  const year = monthCursor.getFullYear();
+  const month = monthCursor.getMonth();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('month-label').textContent = `${monthNames[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const allDates = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    allDates.push(new Date(year, month, d));
+  }
+
+  drawMonthHeatmap(allDates, firstDay);
+  drawMonthSenseChart(allDates);
+  drawMonthWeightChart(allDates);
+
+  let totalChecks = 0, totalSlots = 0, senseSum = 0, senseCount = 0;
+  let firstW = null, lastW = null;
+  allDates.forEach(d => {
+    const ds = ymd(d);
+    const data = state.days[ds];
+    if (data) {
+      HABITS.forEach(h => { if (data.habits && data.habits[h.id]) totalChecks++; });
+      if (data.sense != null) { senseSum += data.sense; senseCount++; }
+      if (data.weight != null) {
+        if (firstW === null) firstW = data.weight;
+        lastW = data.weight;
+      }
+    }
+    totalSlots += HABITS.length;
+  });
+
+  document.getElementById('month-complete-rate').textContent =
+    totalSlots > 0 ? Math.round(totalChecks / totalSlots * 100) + '%' : '—';
+  document.getElementById('month-avg-sense').textContent =
+    senseCount > 0 ? (senseSum / senseCount).toFixed(1) : '—';
+  const wc = (firstW != null && lastW != null) ? (lastW - firstW).toFixed(1) : '—';
+  document.getElementById('month-weight-change').textContent =
+    wc === '—' ? '—' : (wc >= 0 ? '+' : '') + wc;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawMonthHeatmap(allDates, firstDay) {
+  const canvas = document.getElementById('month-heatmap');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const cols = 7;
+  const firstDayOfWeek = firstDay.getDay();
+  const totalCells = firstDayOfWeek + allDates.length;
+  const rows = Math.ceil(totalCells / cols);
+
+  const pad = { l: 8, r: 8, t: 22, b: 8 };
+  const cellSize = Math.min((w - pad.l - pad.r) / cols - 4, (h - pad.t - pad.b) / rows - 4);
+  const startX = (w - (cellSize + 4) * cols) / 2;
+
+  ctx.fillStyle = CHART_COLORS.label;
+  ctx.font = '9px "DM Sans"';
+  ctx.textAlign = 'center';
+  ['S','M','T','W','T','F','S'].forEach((d, i) => {
+    ctx.fillText(d, startX + i * (cellSize + 4) + cellSize / 2, 14);
+  });
+
+  const colorScale = ['#ece8df','#dfe7da','#c4d4bc','#a8bfa2','#7fa079','#5f7a5b'];
+
+  allDates.forEach((d, i) => {
+    const pos = firstDayOfWeek + i;
+    const col = pos % cols;
+    const row = Math.floor(pos / cols);
+    const x = startX + col * (cellSize + 4);
+    const y = pad.t + row * (cellSize + 4);
+
+    const ds = ymd(d);
+    const data = state.days[ds];
+    let count = 0;
+    if (data && data.habits) {
+      HABITS.forEach(h => { if (data.habits[h.id]) count++; });
+    }
+
+    const colorIdx = count <= 0 ? 0 : Math.min(count, 5);
+    ctx.fillStyle = colorScale[colorIdx];
+    roundRect(ctx, x, y, cellSize, cellSize, 3);
+    ctx.fill();
+
+    if (ds === today()) {
+      ctx.strokeStyle = '#8a7348';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, x, y, cellSize, cellSize, 3);
+      ctx.stroke();
+    }
+
+    if (cellSize > 18) {
+      ctx.fillStyle = count >= 3 ? '#faf8f3' : '#8a8d82';
+      ctx.font = '9px "DM Sans"';
+      ctx.textAlign = 'center';
+      ctx.fillText(d.getDate(), x + cellSize / 2, y + cellSize / 2 + 3);
+    }
+  });
+}
+
+function drawMonthSenseChart(allDates) {
+  const canvas = document.getElementById('month-sense-chart');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = { l: 26, r: 12, t: 15, b: 22 };
+  const chartW = w - pad.l - pad.r;
+  const chartH = h - pad.t - pad.b;
+  const n = allDates.length;
+
+  ctx.strokeStyle = CHART_COLORS.grid;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + (chartH / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = CHART_COLORS.label;
+  ctx.font = '9px "DM Sans"';
+  ctx.textAlign = 'right';
+  [0, 5, 10].forEach(v => {
+    const y = pad.t + chartH - (v / 10) * chartH;
+    ctx.fillText(v, pad.l - 4, y + 3);
+  });
+
+  ctx.textAlign = 'center';
+  allDates.forEach((d, i) => {
+    if (d.getDate() % 5 === 0 || i === 0 || i === n - 1) {
+      const x = pad.l + (chartW / (n - 1)) * i;
+      ctx.fillText(d.getDate(), x, h - 6);
+    }
+  });
+
+  const points = allDates.map((d, i) => {
+    const ds = ymd(d);
+    const data = state.days[ds];
+    return {
+      x: pad.l + (chartW / (n - 1)) * i,
+      y: data && data.sense != null ? pad.t + chartH - (data.sense / 10) * chartH : null,
+      val: data ? data.sense : null
+    };
+  });
+
+  const valid = points.filter(p => p.val != null);
+  if (valid.length >= 2) {
+    const sz = valid.length;
+    const sumX = valid.reduce((s, p) => s + p.x, 0);
+    const sumY = valid.reduce((s, p) => s + p.y, 0);
+    const sumXY = valid.reduce((s, p) => s + p.x * p.y, 0);
+    const sumXX = valid.reduce((s, p) => s + p.x * p.x, 0);
+    const slope = (sz * sumXY - sumX * sumY) / (sz * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / sz;
+    ctx.strokeStyle = CHART_COLORS.trend;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, slope * pad.l + intercept);
+    ctx.lineTo(w - pad.r, slope * (w - pad.r) + intercept);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  points.forEach(p => {
+    if (p.val == null) return;
+    ctx.fillStyle = CHART_COLORS.dot;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawMonthWeightChart(allDates) {
+  const canvas = document.getElementById('month-weight-chart');
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  const raw = allDates.map(d => {
+    const data = state.days[ymd(d)];
+    return data ? data.weight : null;
+  });
+
+  const extended = [];
+  for (let i = 6; i >= 1; i--) {
+    const d = addDays(allDates[0], -i);
+    const data = state.days[ymd(d)];
+    extended.push(data ? data.weight : null);
+  }
+  extended.push(...raw);
+  const maExt = movingAverage(extended, 7);
+  const ma = maExt.slice(6);
+
+  const valid = ma.filter(v => v != null);
+  if (valid.length === 0) {
+    ctx.fillStyle = CHART_COLORS.label;
+    ctx.font = 'italic 14px "DM Serif Display"';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data yet', w / 2, h / 2);
+    return;
+  }
+
+  const min = Math.min(...valid) - 0.3;
+  const max = Math.max(...valid) + 0.3;
+  const range = max - min || 1;
+
+  const pad = { l: 34, r: 12, t: 15, b: 22 };
+  const chartW = w - pad.l - pad.r;
+  const chartH = h - pad.t - pad.b;
+  const n = allDates.length;
+
+  ctx.strokeStyle = CHART_COLORS.grid;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.t + (chartH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = CHART_COLORS.label;
+  ctx.font = '9px "DM Sans"';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.t + (chartH / 3) * i;
+    const v = max - (range / 3) * i;
+    ctx.fillText(v.toFixed(1), pad.l - 4, y + 3);
+  }
+
+  ctx.textAlign = 'center';
+  allDates.forEach((d, i) => {
+    if (d.getDate() % 5 === 0 || i === 0 || i === n - 1) {
+      const x = pad.l + (chartW / (n - 1)) * i;
+      ctx.fillText(d.getDate(), x, h - 6);
+    }
+  });
+
+  ctx.strokeStyle = CHART_COLORS.line;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let first = true;
+  ma.forEach((v, i) => {
+    if (v == null) return;
+    const x = pad.l + (chartW / (n - 1)) * i;
+    const y = pad.t + chartH - ((v - min) / range) * chartH;
+    if (first) { ctx.moveTo(x, y); first = false; }
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+// ============ TABS ============
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    const view = tab.dataset.view;
+    document.getElementById('view-' + view).classList.add('active');
+    if (view === 'week') renderWeek();
+    if (view === 'month') renderMonth();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+
+// ============ HANDLERS ============
+document.getElementById('scale-input').addEventListener('input', (e) => {
+  const val = parseInt(e.target.value);
+  const day = getDay(today());
+  day.sense = val;
+  document.getElementById('scale-fill').style.width = (val * 10) + '%';
+  document.getElementById('scale-num').textContent = val;
+  saveState();
+});
+
+document.getElementById('weight-input').addEventListener('change', (e) => {
+  const val = parseFloat(e.target.value);
+  const day = getDay(today());
+  day.weight = isNaN(val) ? null : val;
+  saveState();
+});
+
+document.getElementById('month-prev').addEventListener('click', () => {
+  monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
+  renderMonth();
+});
+document.getElementById('month-next').addEventListener('click', () => {
+  monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
+  renderMonth();
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `corpus-${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported');
+});
+
+document.getElementById('btn-backup').addEventListener('click', () => {
+  const data = JSON.stringify(state);
+  navigator.clipboard.writeText(data).then(() => {
+    toast('Copied');
+  }).catch(() => {
+    toast('Copy failed');
+  });
+});
+
+document.getElementById('btn-import').addEventListener('click', () => {
+  document.getElementById('file-input').click();
+});
+
+document.getElementById('file-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (imported && imported.days) {
+        state = { days: { ...state.days, ...imported.days } };
+        saveState();
+        renderAll();
+        toast('Imported');
+      } else {
+        toast('Invalid format');
+      }
+    } catch (err) {
+      toast('Import failed');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// ============ INIT ============
+function renderAll() {
+  renderHeader();
+  renderChecklist();
+  renderProgress();
+  renderSense();
+  renderWeight();
+}
+
+renderAll();
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const activeView = document.querySelector('.view.active').id;
+    if (activeView === 'view-week') renderWeek();
+    if (activeView === 'view-month') renderMonth();
+  }, 150);
+});
+</script>
+
+</body>
+</html>
